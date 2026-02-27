@@ -1,4 +1,4 @@
-import { getTeams } from "./flashcore/getTeams"
+import { getTeams } from "./flashcore/teams/getTeams"
 
 async function main() {
   const teams = await getTeams()
