@@ -1,36 +1,33 @@
 import { chromium } from "playwright"
+import { Team } from "./types/Team"
 
-export type Team = {
-  name: string
-  url: string
-}
+const BASE =
+  "https://fbref.com/en/comps/206/Serie-A1-Stats#all_stats_squads_standard"
 
 export async function getTeams(): Promise<Team[]> {
-  const browser = await chromium.launch()
+  const browser = await chromium.launch({ headless: true })
   const page = await browser.newPage()
 
-  await page.goto(
-    "https://www.flashscore.com.br/futebol/brasil/brasileiro-feminino/"
-  )
+  await page.goto(BASE, { waitUntil: "domcontentloaded" })
 
-  await page.waitForSelector(".tableCellParticipant")
+  await page.waitForSelector("#stats_squads_standard")
 
   const teams = await page.$$eval(
-    ".tableCellParticipant",
-    elements =>
-      elements.map(el => {
-        const name = el.textContent?.trim()
-
-        const link = el.querySelector("a")?.getAttribute("href")
+    '#stats_squads_standard tbody tr',
+    rows => {
+      return rows.map(row => {
+        const link = row.querySelector(
+          'th[data-stat="team"] a'
+        ) as HTMLAnchorElement
 
         return {
-          name,
-          url: link
+          name: link?.textContent?.trim() || "",
+          url: link?.href || ""
         }
-      })
+      }).filter(t => t.name)
+    }
   )
 
   await browser.close()
-
-  return teams.filter((t): t is Team => Boolean(t.name && t.url))
+  return teams
 }
